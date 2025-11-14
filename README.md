@@ -17,6 +17,14 @@
 2. `preprocess_records()` 로 결측 보정 + 정규화 → 최종 feature vector 작성.
 3. `save_samples_to_csv` 와 `save_samples_to_parquet` 으로 각각 `processed_samples.csv` / `processed_samples.parquet` 생성.
 
+### 파이프라인 흐름 요약
+1. `data/raw_dataset.csv` 에 정의된 센서 샘플을 로드 (`expanded_raw_dataset`).
+2. `preprocess_records` 에서
+   - 습도 결측값 평균 대체
+   - 온도/습도/압력/진동/품질 min-max 정규화
+   - 정규화된 5차원 feature vector 와 라벨을 `Sample` 로 구성
+3. `storage` 모듈을 통해 CSV/Parquet 파일로 저장
+
 ```bash
 cargo run
 ```
