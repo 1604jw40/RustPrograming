@@ -34,5 +34,15 @@ pub fn expanded_raw_dataset() -> Vec<RawRecord> {
         RawRecord { id: "S008", temperature: 18.0, humidity: Some(58.0), pressure: 1.1, vibration: 0.33, quality: 0.66, label: Some("dog") },
         RawRecord { id: "S009", temperature: 8.5, humidity: Some(32.0), pressure: 0.95, vibration: 0.27, quality: 0.57, label: None },
         RawRecord { id: "S010", temperature: 22.0, humidity: Some(68.0), pressure: 1.6, vibration: 0.62, quality: 0.90, label: Some("bird") },
+        RawRecord { id: "S011", temperature: 10.0, humidity: Some(40.0), pressure: 1.05, vibration: 0.35, quality: 0.72, label: Some("cat") },
+        RawRecord { id: "S012", temperature: 27.0, humidity: Some(60.0), pressure: 1.2, vibration: 0.65, quality: 0.85, label: Some("dog") },
+        RawRecord { id: "S013", temperature: 5.0, humidity: None, pressure: 0.75, vibration: 0.18, quality: 0.45, label: None },
+        RawRecord { id: "S014", temperature: 19.5, humidity: Some(52.0), pressure: 1.3, vibration: 0.50, quality: 0.78, label: Some("fox") },
+        RawRecord { id: "S015", temperature: 24.0, humidity: Some(66.0), pressure: 1.4, vibration: 0.73, quality: 0.83, label: Some("bird") },
+        RawRecord { id: "S016", temperature: 14.0, humidity: Some(38.0), pressure: 0.98, vibration: 0.29, quality: 0.58, label: None },
+        RawRecord { id: "S017", temperature: 2.0, humidity: Some(20.0), pressure: 0.7, vibration: 0.15, quality: 0.32, label: None },
+        RawRecord { id: "S018", temperature: 28.0, humidity: Some(70.0), pressure: 1.55, vibration: 0.82, quality: 0.95, label: Some("cat") },
+        RawRecord { id: "S019", temperature: 6.5, humidity: Some(28.0), pressure: 0.85, vibration: 0.24, quality: 0.49, label: None },
+        RawRecord { id: "S020", temperature: 23.0, humidity: Some(64.0), pressure: 1.45, vibration: 0.60, quality: 0.88, label: Some("dog") },
     ]
 }
