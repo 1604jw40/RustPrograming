@@ -34,11 +34,7 @@ pub fn preprocess_records(records: &[RawRecord]) -> Vec<Sample> {
                 scale(record.quality, quality_bounds),
             ];
 
-            Sample::new(
-                record.id,
-                features,
-                record.label.map(|label| label.to_string()),
-            )
+            Sample::new(record.id.clone(), features, record.label.clone())
         })
         .collect()
 }
