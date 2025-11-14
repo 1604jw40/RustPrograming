@@ -1,66 +1,71 @@
+use std::fs::File;
+use std::io::BufReader;
+use std::path::PathBuf;
+
 use csv::ReaderBuilder;
+use glob::glob;
+use log::{info, warn};
+use thiserror::Error;
 
-const RAW_DATA: &str = include_str!("../data/raw_dataset.csv");
+use crate::config::PipelineConfig;
+use crate::domain::{DataDomain, DomainError};
 
-#[derive(Debug, Clone)]
-pub struct RawRecord {
-    pub id: String,
-    pub temperature: f64,
-    pub humidity: Option<f64>,
-    pub pressure: f64,
-    pub vibration: f64,
-    pub quality: f64,
-    pub label: Option<String>,
+#[derive(Debug, Error)]
+pub enum DatasetError {
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("csv error: {0}")]
+    Csv(#[from] csv::Error),
+
+    #[error("glob pattern error: {0}")]
+    Glob(#[from] glob::PatternError),
+
+    #[error("domain parse error: {0}")]
+    Domain(#[from] DomainError),
 }
 
-#[derive(Debug, Clone)]
-pub struct Sample {
-    pub id: String,
-    pub features: Vec<f64>,
-    pub label: Option<String>,
-}
+pub fn load_raw_records<D: DataDomain>(config: &PipelineConfig) -> Result<Vec<D::RawRecord>, DatasetError> {
+    let pattern = config.input_dir.join(&config.file_pattern);
+    let pattern_str = pattern.to_string_lossy().into_owned();
+    info!(
+        "[{}] stage:start parse -> pattern {}",
+        D::name(),
+        pattern_str
+    );
 
-impl Sample {
-    pub fn new(id: impl Into<String>, features: Vec<f64>, label: Option<String>) -> Self {
-        Self { id: id.into(), features, label }
+    let mut all_records = Vec::new();
+    for entry in glob(&pattern_str)? {
+        match entry {
+            Ok(path) => {
+                let count_before = all_records.len();
+                read_single_file::<D>(path.clone(), &mut all_records)?;
+                info!(
+                    "[{}] parsed {} rows from {}",
+                    D::name(),
+                    all_records.len() - count_before,
+                    path.display()
+                );
+            },
+            Err(err) => warn!("failed to read path from glob: {}", err),
+        }
     }
+    Ok(all_records)
 }
 
-pub fn expanded_raw_dataset() -> Vec<RawRecord> {
-    let mut reader = ReaderBuilder::new()
-        .has_headers(true)
-        .from_reader(RAW_DATA.as_bytes());
+fn read_single_file<D: DataDomain>(path: PathBuf, sink: &mut Vec<D::RawRecord>) -> Result<(), DatasetError> {
+    let file = File::open(&path)?;
+    let reader = BufReader::new(file);
+    let mut csv_reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
-    reader
-        .records()
-        .filter_map(|row| row.ok())
-        .map(|row| RawRecord {
-            id: row.get(0).unwrap_or("").trim().to_string(),
-            temperature: parse_required(row.get(1)),
-            humidity: parse_optional(row.get(2)),
-            pressure: parse_required(row.get(3)),
-            vibration: parse_required(row.get(4)),
-            quality: parse_required(row.get(5)),
-            label: row
-                .get(6)
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty())
-                .map(|s| s.to_string()),
-        })
-        .collect()
+    for record in csv_reader.records() {
+        let record = record?;
+        sink.push(D::parse_record(&record)?);
+    }
+
+    Ok(())
 }
 
-fn parse_required(field: Option<&str>) -> f64 {
-    field
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .and_then(|s| s.parse::<f64>().ok())
-        .unwrap_or(0.0)
-}
-
-fn parse_optional(field: Option<&str>) -> Option<f64> {
-    field
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .and_then(|s| s.parse::<f64>().ok())
+pub fn chunk_records<T>(records: &[T], chunk_size: usize) -> Vec<&[T]> {
+    records.chunks(chunk_size.max(1)).collect()
 }

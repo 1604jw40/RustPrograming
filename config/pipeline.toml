@@ -1,0 +1,4 @@
+input_dir = "data"
+file_pattern = "*.csv"
+output_parquet = "processed_samples.parquet"
+chunk_size = 8

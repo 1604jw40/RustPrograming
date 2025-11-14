@@ -1,18 +1,34 @@
-mod dataset;
-mod preprocess;
-mod storage;
+use log::{info, warn};
+use sampledb::config::PipelineConfig;
+use sampledb::dataset::{chunk_records, load_raw_records};
+use sampledb::domain::sensor::SensorDomain;
+use sampledb::preprocess::preprocess_records;
+use sampledb::storage::save_samples_to_parquet;
 
-use crate::dataset::expanded_raw_dataset;
-use crate::preprocess::preprocess_records;
-use crate::storage::{save_samples_to_parquet, StorageError};
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
 
-fn main() -> Result<(), StorageError> {
-    let raw_records = expanded_raw_dataset();
-    let samples = preprocess_records(&raw_records);
-    println!("preprocessed rows: {}", samples.len());
+    let config = PipelineConfig::load("config/pipeline.toml")?;
+    info!("pipeline stage: configuration loaded");
 
-    save_samples_to_parquet(&samples, "processed_samples.parquet")?;
+    let raw_records = load_raw_records::<SensorDomain>(&config)?;
+    info!("pipeline stage: parsing complete ({} rows)", raw_records.len());
 
-    println!("saved Parquet dataset for downstream modeling");
+    let chunked = chunk_records(&raw_records, config.chunk_size);
+    for (idx, chunk) in chunked.iter().enumerate() {
+        info!("chunk {} -> {} rows", idx, chunk.len());
+    }
+    info!("pipeline stage: chunk linkage complete");
+
+    if raw_records.is_empty() {
+        warn!("no data found; skipping export");
+        return Ok(());
+    }
+
+    let samples = preprocess_records::<SensorDomain>(&raw_records);
+    info!("pipeline stage: preprocessing complete ({} rows)", samples.len());
+
+    save_samples_to_parquet(&samples, &config.output_parquet)?;
+    info!("pipeline stage: export complete (saved to {})", config.output_parquet.display());
     Ok(())
 }

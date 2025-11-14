@@ -4,7 +4,9 @@ use std::path::Path;
 use polars::prelude::*;
 use thiserror::Error;
 
-use crate::dataset::Sample;
+use crate::model::Sample;
+
+/// 저장 로직 (Parquet)
 
 #[derive(Debug, Error)]
 pub enum StorageError {

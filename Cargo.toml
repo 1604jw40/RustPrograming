@@ -1,9 +1,15 @@
 [package]
 name = "sampledb"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 
 [dependencies]
 csv = "1"
 thiserror = "2.0.17"
 polars = { version = "0.44.2", features = ["parquet"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+rayon = "1.10"
+glob = "0.3"
+log = "0.4"
+env_logger = "0.11"
