@@ -11,50 +11,8 @@ pub enum StorageError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("csv error: {0}")]
-    Csv(#[from] csv::Error),
-
     #[error("polars error: {0}")]
     Polars(#[from] polars::error::PolarsError),
-}
-
-pub fn save_samples_to_csv<P: AsRef<Path>>(samples: &[Sample], path: P) -> Result<(), StorageError> {
-    let mut writer = csv::Writer::from_path(path)?;
-    writer.write_record(["id", "features", "label"])?;
-
-    for sample in samples {
-        let features = sample
-            .features
-            .iter()
-            .map(|f| f.to_string())
-            .collect::<Vec<_>>()
-            .join(" ");
-        let label = sample.label.clone().unwrap_or_default();
-        writer.write_record(&[sample.id.clone(), features, label])?;
-    }
-    writer.flush()?;
-    Ok(())
-}
-
-pub fn load_samples_from_csv<P: AsRef<Path>>(path: P) -> Result<Vec<Sample>, StorageError> {
-    let mut reader = csv::Reader::from_path(path)?;
-    let mut samples = Vec::new();
-    for record in reader.records() {
-        let record = record?;
-        let id = record.get(0).unwrap_or("").to_string();
-        let features = record
-            .get(1)
-            .unwrap_or("")
-            .split_whitespace()
-            .filter_map(|token| token.parse::<f64>().ok())
-            .collect::<Vec<f64>>();
-        let label = record
-            .get(2)
-            .filter(|s| !s.is_empty())
-            .map(|s| s.to_string());
-        samples.push(Sample::new(id, features, label));
-    }
-    Ok(samples)
 }
 
 pub fn save_samples_to_parquet<P: AsRef<Path>>(samples: &[Sample], path: P) -> Result<(), StorageError> {

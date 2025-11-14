@@ -17,7 +17,10 @@
    - `Series::new("id".into(), ids)` 처럼 `PlSmallStr` 로 이름을 넘겨야 하므로 `into()`를 사용합니다. Polars 0.44 이후 `DataFrame::new` 는 `Column` 타입을 기대하므로 `Column::new(name, values)` 호출이 필요합니다.
 
 5. **에러 모델링**  
-   - `storage::StorageError` 는 `thiserror::Error` 를 이용해 CSV/Polars/IO 에러를 하나의 enum 으로 래핑합니다. `?` 사용 시 `From` 트레이트로 자동 변환되므로, 함수 시그니처에서 `Result<_, StorageError>` 를 유지할 수 있습니다.
+   - `storage::StorageError` 는 `thiserror::Error` 를 이용해 IO/Polars 에러를 하나의 enum 으로 래핑합니다. `?` 사용 시 `From` 트레이트로 자동 변환되므로, 함수 시그니처에서 `Result<_, StorageError>` 를 유지할 수 있습니다.
 
 6. **파일 저장 시 덮어쓰기**  
    - `File::create(path)?` 는 기존 파일이 있으면 truncate 후 재작성합니다. 실행 전에 수동 삭제할 필요가 없고, `Ok(())` 반환으로 종료 시점에 파일이 완전히 기록된 상태를 보장합니다 (에러 발생 시 즉시 Propagate).
+
+7. **파이썬 파이프라인 연동**  
+   - 최종 산출물은 `processed_samples.parquet` 하나이므로, Python 의 pandas/Polars 등에서 그대로 읽어 후속 감성 분석 단계를 실행할 수 있습니다. Rust 쪽에서는 저장만 담당하고 재적재가 필요하면 `load_samples_from_parquet` 을 직접 호출합니다.
